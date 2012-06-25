@@ -3,17 +3,12 @@
 
 # PLUGIN: 
 
-phonegap-plugin-openFeint
+phonegap-plugin-wizDevTools
+PhoneGap 1.1
 
 
 
 # DESCRIPTION :
 
-PhoneGap plugin for accessing OpenFeint features.
+PhoneGap plugin for accessing the Wizard Development Toolkit. (iOS ONLY)
 
-
-
-# DOCS & SUPPORT :
-
-PhoneGap v1.1
-http://dev.wizcorp.jp/wiki/
