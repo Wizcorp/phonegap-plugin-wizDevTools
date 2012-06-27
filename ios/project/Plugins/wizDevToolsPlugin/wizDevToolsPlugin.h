@@ -1,41 +1,27 @@
-/* OpenFeintPlugin - IOS side of the bridge to openFeintPlugin JavaScript for PhoneGap
+/* wizDevTools - IOS debug toolkit for PhoneGap
  *
- * @author WizCorp Inc. [ Incorporated Wizards ] 
- * @copyright 2011
- * @file OpenFeintPlugin.h for PhoneGap
+ * @author Ally Ogilvie
+ * @copyright 2012 WizCorp Inc. [ Incorporated Wizards ]
+ * @file wizDevToolsPlugin.h for PhoneGap
  *
- */ 
+ */
 
 #import <Foundation/Foundation.h>
+
 #import <UIKit/UIKit.h>
+
+#ifdef PHONEGAP_FRAMEWORK
 #import <PhoneGap/PGPlugin.h>
-#import <OpenFeint/OFUser.h>
-#import <OpenFeint/OFCurrentUser.h>
+#else
+#import "PGPlugin.h"
+#endif
+
+@interface UIWebView(ExceptionDebug)
+@end
 
 
-@interface OpenFeintPlugin : PGPlugin <OFUserDelegate>{
-	UIWindow* window;
-	OFUser* currentUser;
-    NSArray *friends;
-    NSString *getFriendCBid;
-    
-    NSMutableDictionary *getFriendCallbackArray;
-    
-    
-    
-}
-
-@property (nonatomic, retain) UIWindow *window;
-@property (nonatomic, retain) OFUser *currentUser;
-@property (nonatomic, retain) NSArray *friends;
-@property (nonatomic, retain) NSString *getFriendCBid;
-
-
-/* OpenFeint methods
- */
-- (void)invoke:(NSArray*)arguments withDict:(NSDictionary*)options;
-- (void)openDashboard:(NSArray*)arguments withDict:(NSDictionary*)options;
-- (void)getCurrentUser:(NSArray*)arguments withDict:(NSDictionary*)options;
-- (void)getFriends:(NSArray*)arguments withDict:(NSDictionary*)options;
-
+@interface wizDevToolsPlugin : PGPlugin
+    + (wizDevToolsPlugin*) sharedInstance;
+    - (PGPlugin*)initWithWebView:(UIWebView*)webView;
+    - (void)ready:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 @end

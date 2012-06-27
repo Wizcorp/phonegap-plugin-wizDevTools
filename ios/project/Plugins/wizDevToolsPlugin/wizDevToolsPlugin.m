@@ -1,359 +1,287 @@
-/* OpenFeintPlugin - IOS side of the bridge to openFeintPlugin JavaScript for PhoneGap
+/* wizDevTools - IOS debug toolkit for PhoneGap
  *
- * @author WizCorp Inc. [ Incorporated Wizards ] 
- * @copyright 2011
- * @file OpenFeintPlugin.m for PhoneGap
+ * @author Ally Ogilvie
+ * @copyright 2012 WizCorp Inc. [ Incorporated Wizards ]
+ * @file wizDevToolsPlugin.m for PhoneGap
  *
- */ 
+ */
 
-#import "OpenFeintPlugin.h"
-#import <OpenFeint/OpenFeint.h>
-#import <OpenFeint/OFUser.h>
-#import "WizDebugLog.h"
 
+#import "wizDevToolsPlugin.h"
+
+@interface wizDevToolsPlugin()
+- (void) fireExceptionDebugEventWithJSONString:(NSString*)jsonString;
+@end
+
+#ifndef NDEBUG // Never build this plugin in RELEASE (will otherwise get rejected by Apple) !
 #import <PhoneGap/JSON.h>
+#import <objc/runtime.h>
 
 
-@implementation OpenFeintPlugin
+@class WebView;
+@class WebScriptCallFrame;
+@class WebFrame;
 
-@synthesize window;
-@synthesize currentUser;
-@synthesize	friends;
-@synthesize getFriendCBid;
+NSMutableDictionary* SOURCES = nil;
 
+@interface Source : NSObject
+@property (nonatomic)         int       baseLine;
+@property (nonatomic, retain) NSString* url;
+@property (nonatomic, retain) NSArray*  lines;
+@end
 
+@interface CallFrameInfo : NSObject
+@property (nonatomic) int sid;
+@property (nonatomic) int lineNumber;
+@end
 
-- (void)invoke:(NSArray*)arguments withDict:(NSDictionary*)options
+@implementation Source
+@synthesize baseLine;
+@synthesize url;
+@synthesize lines;
+
+- (void) dealloc
 {
-    WizLog(@"[OpenFeintPlugin] ******* invoke OpenFeint ");
-    
-    NSString *ofKey;
-    NSString *ofSecret;
-    NSString *gameName;
-    NSString *callbackId = [arguments objectAtIndex:0];
-    
-    PluginResult* pluginResult;
-
-    WizLog(@"Options:%@", options);
-    
-    if (options) 
-	{
-        ofKey    = [options objectForKey:@"gameKey"];
-        ofSecret = [options objectForKey:@"gameSecret"];
-        gameName = [options objectForKey:@"gameName"];
-    
-    
-    window.frame = [UIScreen mainScreen].bounds;
-    //[window addSubview:rootController.view];
-    [window makeKeyAndVisible];
-	
-	NSDictionary* settings = [NSDictionary dictionaryWithObjectsAndKeys:
-							  [NSNumber numberWithInt:UIInterfaceOrientationPortrait], OpenFeintSettingDashboardOrientation,
-							  @"SampleApp", OpenFeintSettingShortDisplayName,
-							  [NSNumber numberWithBool:YES], OpenFeintSettingEnablePushNotifications,
-							  [NSNumber numberWithBool:NO], OpenFeintSettingDisableUserGeneratedContent,
-  							  [NSNumber numberWithBool:NO], OpenFeintSettingAlwaysAskForApprovalInDebug,
-                              //  [NSNumber numberWithInt:OFDevelopmentMode_DEVELOPMENT], OpenFeintSettingDevelopmentMode,
-                              [NSNumber numberWithInt:OFDevelopmentMode_RELEASE], OpenFeintSettingDevelopmentMode,
-							  window, OpenFeintSettingPresentationWindow,
-							  nil
-							  ];
-    
-
-
-    
-    /*
-     ofDelegate = [SampleOFDelegate new];
-     ofNotificationDelegate = [SampleOFNotificationDelegate new];
-     ofChallengeDelegate = [SampleOFChallengeDelegate new];
-     ofBragDelegate = [SampleOFBragDelegate new];
-     */
-    
-    /*
-     OFDelegatesContainer* delegates = [OFDelegatesContainer containerWithOpenFeintDelegate:ofDelegate
-     andChallengeDelegate:ofChallengeDelegate
-     andNotificationDelegate:ofNotificationDelegate];
-     delegates.bragDelegate = ofBragDelegate;
-     */
-    
-    
-    
-	[OpenFeint initializeWithProductKey:ofKey
-							  andSecret:ofSecret
-						 andDisplayName:gameName
-							andSettings:settings
-						   andDelegates:nil];
-    
-    // [OFUser setDelegate:self];
-    // [OFCurrentUser setDelegate:self];
-    
-    // Initialize some dictionaries
-    // getFriendCallbackArray = [[NSMutableDictionary alloc] init];
-    
-        pluginResult = [PluginResult resultWithStatus:PGCommandStatus_OK];
-   
-    } else {
-        pluginResult = [PluginResult resultWithStatus:PGCommandStatus_ERROR messageAsString:@"noParam"];
-    }
-    
-    
-    
-    [self writeJavascript: [pluginResult toSuccessCallbackString:callbackId]];
-    
-    
+    self.url = nil;
+    self.lines = nil;
+    [super dealloc];
 }
+@end
 
+@implementation CallFrameInfo
+@synthesize sid;
+@synthesize lineNumber;
+@end
 
-- (void) openDashboard:(NSArray*)arguments withDict:(NSDictionary*)options
+char callFramesKey;
+
+@implementation UIWebView(ExceptionDebug)
+- (void)    webView:(WebView *)webView
+failedToParseSource:(NSString *)source
+     baseLineNumber:(NSUInteger)lineNumber
+            fromURL:(NSURL *)url
+          withError:(NSError *)error
+        forWebFrame:(WebFrame *)webFrame
 {
-     WizLog(@"[OpenFeintPlugin] ******* Opening OpenFeint Dashboard");
-    [OpenFeint launchDashboard];
-}
-
-
-- (void) getCurrentUser:(NSArray*)arguments withDict:(NSDictionary*)options
-{
-    WizLog(@"[OpenFeintPlugin] ******* getCurrentUser OpenFeint ");
-    
-    NSUInteger argc = [arguments count];
-    NSString *callbackId = [arguments objectAtIndex:0];
-    if (argc < 1) {
-        // Send Exception
-        PluginResult* pluginResult = [PluginResult resultWithStatus:PGCommandStatus_ERROR messageAsString:@"noParam"];
-        [self writeJavascript: [pluginResult toSuccessCallbackString:callbackId]];
-        
-		return;	
-	}
-    
-    
-    currentUser = [OFCurrentUser currentUser];
-                          
-    NSDictionary *userData = [NSDictionary dictionaryWithObjectsAndKeys:
-                              currentUser.userId,                                                             @"userId",
-                              currentUser.name,                                                               @"name",
-                              [NSString stringWithFormat:@"%f",currentUser.latitude],                         @"latitude",
-                              [NSString stringWithFormat:@"%f",currentUser.longitude],                        @"longitude",
-                              [NSString stringWithFormat:@"%d",currentUser.followsLocalUser],                 @"followsLocalUser",
-                              currentUser.resourceId,                                                         @"mId",
-                              [NSString stringWithFormat:@"%d",currentUser.usesFacebookProfilePicture],       @"usesFacebookProfilePicture",
-                              [NSString stringWithFormat:@"%d",currentUser.gamerScore],                       @"score",
-                              [NSString stringWithFormat:@"%@",currentUser.profilePictureUrl],                @"pictureUrl",
-                              [NSString stringWithFormat:@"%d",currentUser.online],                           @"online",
-                              nil];
-   
-    
-    WizLog(@"User Data:%@", userData);
-    
-    PluginResult* pluginResult = [PluginResult resultWithStatus:PGCommandStatus_OK messageAsDictionary:userData];
-    [self writeJavascript: [pluginResult toSuccessCallbackString:callbackId]];
-    
-}
-
-
-- (void) getFriends:(NSArray *)arguments withDict:(NSDictionary *)options
-{
-    WizLog(@"[OpenFeintPlugin] ******* getFriends OpenFeint ");
-    
-    NSString *callbackId = [arguments objectAtIndex:0];
-    NSString *resourceId;
-    
-    // NSMutableArray *currentUserGetFriendArray;
-    // WizLog(@"Options:%@", arguments);
-    
-    
-    self.getFriendCBid = callbackId;
-    [OFUser setDelegate: self];
-    
-    
-    if ([arguments count] > 0) 
-	{
-        // take out resource id from array.
-        resourceId = [[arguments objectAtIndex:1]stringValue]; 
-        
-        WizLog(@"extracted resourceId: %@", resourceId);
-        [OFUser getUser : resourceId];
-        
-    } else {
-        
-        // no resourceId specified, fetch and use current users id.
-        currentUser = [OFCurrentUser currentUser];
-        // resourceId = currentUser.resourceId;
-        // WizLog(@"fetch resourceId:%@", resourceId);
-        [currentUser getFriends];
+    int lineno = 0;
+    id lineValue = [[error userInfo] objectForKey:@"WebScriptErrorLineNumber"];
+    if (lineValue) {
+        lineno = [lineValue integerValue] - lineNumber;
     }
 
-    WizLog(@"[OpenFeintPlugin] ******* getFriends - waiting result... callbackId:%@", callbackId);
-    
-    
-    /*
-    WizLog(@"currentUserGetFriendArray:%@", currentUserGetFriendArray);
-    currentUserGetFriendArray = [getFriendCallbackArray objectForKey:resourceId];
-    WizLog(@"currentUserGetFriendArray: %@", currentUserGetFriendArray);
-    
-    if([currentUserGetFriendArray count] == 0){
-        
-        OFRequestHandle* handle = [currentUser getFriends];
-        
-        if(!handle)
-        {
-            WizLog(@"Did not get request handle from OFUser's getFriends");
-        }
-        [getFriendCallbackArray setObject:[NSMutableArray arrayWithObject:callbackId] forKey:currentUser.userId];
-    }
-    else if([currentUserGetFriendArray indexOfObject:callbackId] == NSNotFound)
-    {
-        [currentUserGetFriendArray addObject:callbackId];
-    }
-     */
-    
+    NSString* line = [[source componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]] objectAtIndex:lineno];
+
+    id exception = [NSDictionary dictionaryWithObjectsAndKeys:
+                    [NSString stringWithFormat:@"Failed to parse JavaScript at line %d: %@", lineno, line], @"message",
+                    @"ParseError", @"type",
+                    nil];
+
+    id documentURL = [[webFrame DOMDocument] URL];
+    __block NSString* json = [[[NSDictionary dictionaryWithObjectsAndKeys:
+                                [webView mainFrameTitle], @"mainFrameTitle",
+                                documentURL,              @"documentURL",
+                                exception,                @"exception",
+                                nil] JSONString] retain];
+
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+        [[wizDevToolsPlugin sharedInstance] fireExceptionDebugEventWithJSONString:json];
+        [json release];
+    }];
 }
 
-
-- (void)didGetFriendsWithThisApplication:(NSArray*)follows OFUser:(OFUser*)myFriends {
-    
-    WizLog(@"myFrineds:%@", follows);
-}
-
-
-- (void)didFailGetFriendsWithThisApplication:(NSArray*)follows OFUser:(OFUser*)myFriends{
-    
-    WizLog(@"Failed to get frineds:%@", myFriends);
-}
-
-
-- (void)didGetUser:(OFUser*)user {
-    WizLog(@"[OpenFeintPlugin] ******* Got user success");
-
-    // NSString *resourceId = user.resourceId;
-    // WizLog(@"fetch resourceId:%@", resourceId);
-    [user getFriends];
-    
-}
-
-
-- (void)didFailGetUser {
-    WizLog(@"[OpenFeintPlugin] ******* Fail to get user");
-    
-    PluginResult* pluginResult = [PluginResult resultWithStatus:PGCommandStatus_ERROR];
-    WizLog(@"[OpenFeintPlugin] ******* getFriends - returning result...callbackId: %@", self.getFriendCBid);
-    [self writeJavascript: [pluginResult toSuccessCallbackString:self.getFriendCBid]];
-}
-
-
-- (void)didFailGetFriendsOFUser:(OFUser*)user
+- (void)webView:(WebView *)webView
+ didParseSource:(NSString *)source
+ baseLineNumber:(int)lineNumber
+        fromURL:(NSURL *)url
+       sourceId:(int)sid
+    forWebFrame:(WebFrame *)webFrame
 {
-    WizLog(@"[did NOT get friends] **** function: ");
+    Source* src  = [[[Source alloc] init] autorelease];
+    src.baseLine = lineNumber;
+    src.url      = [url absoluteString];
+    src.lines    = [source componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+    if (!src.url) src.url = @"<evaluated>";
+
+    NSLog(@"PARSED SOME JAVASCRIPT!");
+    NSLog(@"            Web view: %@", webView);
+    NSLog(@"    Base line number: %d", lineNumber);
+    NSLog(@"                  ID: %d", sid);
+    NSLog(@"                 URL: %@", url);
+    NSLog(@"     Number of lines: %i", [src.lines count]);
+#ifdef EXCEPTION_DEBUG_LOG_SOURCE
+    NSLog(@"         Source code: %@", src.lines);
+#endif
+
+    if (!SOURCES) {
+        SOURCES = [[NSMutableDictionary alloc] init];
+    }
+
+    [SOURCES setObject:src forKey:[NSNumber numberWithInt:sid]];
 }
 
-
-- (void)didGetFriends:(NSArray*)follows OFUser:(OFUser*)user
+- (void)  webView:(WebView *)webView
+didEnterCallFrame:(WebScriptCallFrame *)frame
+         sourceId:(int)sid
+             line:(int)lineno
+      forWebFrame:(WebFrame *)webFrame
 {
-
-    // NSMutableArray *friendsHolder = [[NSMutableArray alloc] init];
-    
-    if ([follows count] > 1){
-        // More than one friend
-        NSMutableArray *friendList = [[NSMutableArray alloc] init];
-        for (OFUser *follower in follows)
-        {
-            
-            [friendList addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-                                   follower.userId,                                                             @"userId",
-                                   follower.name,                                                               @"name",
-                                   [NSString stringWithFormat:@"%f",follower.latitude],                         @"latitude",
-                                   [NSString stringWithFormat:@"%f",follower.longitude],                        @"longitude",
-                                   [NSString stringWithFormat:@"%d",follower.followsLocalUser],                 @"followsLocalUser",
-                                   follower.resourceId,                                                         @"mId",
-                                   [NSString stringWithFormat:@"%d",follower.usesFacebookProfilePicture],       @"usesFacebookProfilePicture",
-                                   [NSString stringWithFormat:@"%d",follower.gamerScore],                       @"score",
-                                   [NSString stringWithFormat:@"%@",follower.profilePictureUrl],                @"pictureUrl",
-                                   [NSString stringWithFormat:@"%d",follower.online],                           @"online",
-                                   nil]];
-
-        }
-        WizLog(@"Friend Data:%@", friendList);
-
-        NSArray *friendsHolder = [[NSArray alloc] initWithArray:friendList copyItems:YES];
-        
-        PluginResult* pluginResult = [PluginResult resultWithStatus:PGCommandStatus_OK messageAsArray:friendsHolder];
-        WizLog(@"[OpenFeintPlugin] ******* getFriends - returning result...callbackId: %@", self.getFriendCBid);
-        [self writeJavascript: [pluginResult toSuccessCallbackString:self.getFriendCBid]];
-        
-        
-        [friendsHolder release];
-        [friendList release];
-        
-    } else {
-        
-        // 1 or less friends hahaha
-        for (OFUser *follower in follows)
-        {
-            
-           NSDictionary *friendList = [NSDictionary dictionaryWithObjectsAndKeys:
-                                       follower.userId,                                                             @"userId",
-                                       follower.name,                                                               @"name",
-                                       [NSString stringWithFormat:@"%f",follower.latitude],                         @"latitude",
-                                       [NSString stringWithFormat:@"%f",follower.longitude],                        @"longitude",
-                                       [NSString stringWithFormat:@"%d",follower.followsLocalUser],                 @"followsLocalUser",
-                                       follower.resourceId,                                                         @"mId",
-                                       [NSString stringWithFormat:@"%d",follower.usesFacebookProfilePicture],       @"usesFacebookProfilePicture",
-                                       [NSString stringWithFormat:@"%d",follower.gamerScore],                       @"score",
-                                       [NSString stringWithFormat:@"%@",follower.profilePictureUrl],                @"pictureUrl",
-                                       [NSString stringWithFormat:@"%d",follower.online],                           @"online",
-                                       nil];
-            
-            WizLog(@"Friend Data:%@", friendList);
-            PluginResult* pluginResult = [PluginResult resultWithStatus:PGCommandStatus_OK messageAsDictionary:friendList];
-            
-            WizLog(@"[OpenFeintPlugin] ******* getFriends - returning result...callbackId: %@", self.getFriendCBid);
-            [self writeJavascript: [pluginResult toSuccessCallbackString:self.getFriendCBid]];
-           
-        }
-        
+    NSMutableDictionary* callFrames = objc_getAssociatedObject(webView, &callFramesKey);
+    if (!callFrames) {
+        callFrames = [[[NSMutableDictionary alloc] init] autorelease];
+        objc_setAssociatedObject(webView, &callFramesKey, callFrames, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
-	
-       
-    
-    /*
-    NSMutableArray *callbackArray = [getFriendCallbackArray objectForKey:user.userId];
-    
-    if([callbackArray count] > 0)
-    {
-        NSMutableArray *to_delete = [[NSMutableArray alloc] init];
-        
-        for(NSString *callbackId in callbackArray)
-        {
-            NSAutoreleasePool *loopPool = [[NSAutoreleasePool alloc] init];
-            
-            PluginResult* pluginResult = [PluginResult resultWithStatus:PGCommandStatus_OK messageAsString: [[friendList JSONRepresentation] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
-            
-            
-            [self writeJavascript: [pluginResult toSuccessCallbackString:callbackId]];
-            
-            [to_delete addObject:callbackId];
-            
-            [loopPool drain];
-        }
-        
-        for (NSString *callbackId in to_delete)
-        {
-            [callbackArray removeObject:callbackId];
-        }
-        
-        [to_delete release];
-        
-        if([callbackArray count] == 0)
-        {
-            [getFriendCallbackArray removeObjectForKey:user.userId];
-        }
-        
-        
-    }
-
-    [friendList release];
-     
-     */
+    CallFrameInfo* callFrameInfo = [[[CallFrameInfo alloc] init] autorelease];
+    callFrameInfo.sid = sid;
+    callFrameInfo.lineNumber = lineno;
+    [callFrames setObject:callFrameInfo forKey:[NSValue valueWithNonretainedObject:frame]];
 }
 
+- (void)   webView:(WebView *)webView
+willLeaveCallFrame:(WebScriptCallFrame *)frame
+          sourceId:(int)sid
+              line:(int)lineno
+       forWebFrame:(WebFrame *)webFrame
+{
+    NSMutableDictionary* callFrames = objc_getAssociatedObject(webView, &callFramesKey);
+    if (callFrames)
+        [callFrames removeObjectForKey:[NSValue valueWithNonretainedObject:frame]];
+}
+
+- (void)   webView:(WebView *)webView
+exceptionWasRaised:(WebScriptCallFrame *)frame
+        hasHandler:(BOOL)hasHandler
+          sourceId:(int)sid
+              line:(int)lineno
+       forWebFrame:(WebFrame *)webFrame
+{
+    // Ignore exeptions that are handled
+    if (hasHandler) {
+        return;
+    }
+
+    // Ignore errors triggered by Cordova in blank pages
+    id documentURL = [[webFrame DOMDocument] URL];
+    if ([documentURL isEqualToString:@"about:blank"]) {
+        return;
+    }
+
+    id exception = [frame exception];
+    NSString* type = nil;
+    NSString* message = nil;
+
+    @try  {
+        type = [exception valueForKey:@"name"];
+        message = [exception valueForKey:@"message"];
+    }
+    @catch (NSException* exc) {
+        if ([exception isKindOfClass:[NSString class]]) {
+            message = exception;
+            type = @"String";
+        }
+    }
+
+    if (!type) type = @"Error";
+    if (!message) message = @"<unknown error>";
+
+    exception = [NSDictionary dictionaryWithObjectsAndKeys:
+                 message, @"message",
+                 type, @"type",
+                 nil];
+
+    // Build the callstack
+    NSMutableDictionary* callFrames = objc_getAssociatedObject(webView, &callFramesKey);
+    WebScriptCallFrame* tmp = frame;
+    NSMutableArray* callStack = [[[NSMutableArray alloc] init] autorelease];
+    while (tmp) {
+        NSString* functionName = [tmp functionName];
+        if (!functionName) functionName = @"<anonymous>";
+        CallFrameInfo* callFrameInfo = [callFrames objectForKey:[NSValue valueWithNonretainedObject:tmp]];
+        Source* callFrameSource = [SOURCES objectForKey:[NSNumber numberWithInt:callFrameInfo.sid]];
+        int realLineNumber = callFrameInfo.lineNumber - callFrameSource.baseLine;
+        NSNumber* callFrameLineNumber = [NSNumber numberWithInt:realLineNumber];
+        NSString* callFrameLine = nil;
+        // incase real line number and lines of source code are out of sync, make this check. (Thanks Apple.. T-T)
+        if (realLineNumber >=0 && realLineNumber<[callFrameSource.lines count])
+            callFrameLine = [callFrameSource.lines objectAtIndex:realLineNumber];
+
+        [callStack addObject:[NSDictionary dictionaryWithObjectsAndKeys:
+                              functionName,        @"functionName",
+                              callFrameSource.url, @"url",
+                              callFrameLineNumber, @"lineNumber",
+                              callFrameLine,       @"line",
+                              nil]];
+        tmp = [tmp caller];
+    }
+
+    __block NSString* json = [[[NSDictionary dictionaryWithObjectsAndKeys:
+                       callStack,                @"callStack",
+                       [webView mainFrameTitle], @"mainFrameTitle",
+                       documentURL,              @"documentURL",
+                       exception,                @"exception",
+                       nil] JSONString] retain];
+
+    [[NSOperationQueue mainQueue] addOperationWithBlock:^{
+        [[wizDevToolsPlugin sharedInstance] fireExceptionDebugEventWithJSONString:json];
+        [json release];
+    }];
+}
+
+- (void)webView:(id)sender didClearWindowObject:(id)windowObject forFrame:(WebFrame*)frame
+{
+    if ([sender respondsToSelector:@selector(setScriptDebugDelegate:)]) {
+        [sender setScriptDebugDelegate:self];
+    }
+}
+@end
+#endif
+
+static wizDevToolsPlugin* instance = nil;
+
+
+#import "WizUtils.h"
+#import "WizDebugLog.h"
+#include <unistd.h>
+
+@implementation wizDevToolsPlugin
+
+
++ (wizDevToolsPlugin*)sharedInstance {
+    return instance;
+}
+
+
+
+- (PGPlugin*)initWithWebView:(UIWebView*)webView {
+    self = [super initWithWebView:webView];
+    if (self) {
+        if (instance)
+            [instance dealloc];
+
+        instance = self;
+        NSLog(@"wizDevToolsPlugin initialized.");
+    }
+    return self;
+}
+
+- (void)dealloc {
+    instance = nil;
+    [super dealloc];
+}
+
+
+
+
+- (void)ready:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
+    // Function called by Javascript to have PhoneGap load the plugin
+    [self writeJavascript: [[PluginResult resultWithStatus:PGCommandStatus_OK] toSuccessCallbackString:[arguments pop]]];
+}
+
+- (void) fireExceptionDebugEventWithJSONString:(NSString*)jsonString {
+    NSLog(@"*** EXCEPTION_DEBUG: %@", jsonString);
+
+    NSString* script = [NSString stringWithFormat:@"setTimeout(function(){var e=window.document.createEvent('Events');e.initEvent('exceptionDebug',true,true);e.data=%@;window.dispatchEvent(e)},0)", jsonString];
+
+    [[self webView] stringByEvaluatingJavaScriptFromString:script];
+}
 
 @end
