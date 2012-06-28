@@ -2,14 +2,14 @@
 *
  * @author Ally Ogilvie
  * @copyright 2012 WizCorp Inc. [ Incorporated Wizards ]
- * @file - wizUtils.js
+ * @file - wizDevTools.js
  * @about - JavaScript PhoneGap bridge for extra utilities 
  *
  *
 */
 
-var wizDevTools = {
-    ready: function() {
-        return window.PhoneGap.exec(null, null, "wizDevToolsPlugin", "ready", []);
-    }
-};
+if (window.cordova) {
+    window.document.addEventListener("deviceready", function () {
+        cordova.exec(null, null, "wizDevToolsPlugin", "ready", []);
+    }, false);
+}

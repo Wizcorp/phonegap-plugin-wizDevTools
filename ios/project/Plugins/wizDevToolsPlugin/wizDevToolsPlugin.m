@@ -14,7 +14,7 @@
 @end
 
 #ifndef NDEBUG // Never build this plugin in RELEASE (will otherwise get rejected by Apple) !
-#import <PhoneGap/JSON.h>
+#import <Cordova/JSONKit.h>
 #import <objc/runtime.h>
 
 
@@ -55,7 +55,7 @@ NSMutableDictionary* SOURCES = nil;
 
 char callFramesKey;
 
-@implementation UIWebView(ExceptionDebug)
+@implementation CDVCordovaView(ExceptionDebug)
 - (void)    webView:(WebView *)webView
 failedToParseSource:(NSString *)source
      baseLineNumber:(NSUInteger)lineNumber
@@ -251,7 +251,7 @@ static wizDevToolsPlugin* instance = nil;
 
 
 
-- (PGPlugin*)initWithWebView:(UIWebView*)webView {
+- (CDVPlugin*)initWithWebView:(UIWebView*)webView {
     self = [super initWithWebView:webView];
     if (self) {
         if (instance)
@@ -273,7 +273,7 @@ static wizDevToolsPlugin* instance = nil;
 
 - (void)ready:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
     // Function called by Javascript to have PhoneGap load the plugin
-    [self writeJavascript: [[PluginResult resultWithStatus:PGCommandStatus_OK] toSuccessCallbackString:[arguments pop]]];
+    [self writeJavascript: [[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] toSuccessCallbackString:[arguments pop]]];
 }
 
 - (void) fireExceptionDebugEventWithJSONString:(NSString*)jsonString {

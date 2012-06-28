@@ -8,20 +8,19 @@
 
 #import <Foundation/Foundation.h>
 
-#import <UIKit/UIKit.h>
-
-#ifdef PHONEGAP_FRAMEWORK
-#import <PhoneGap/PGPlugin.h>
+#ifdef CORDOVA_FRAMEWORK
+#import <Cordova/CDVPlugin.h>
+#import <Cordova/CDVCordovaView.h>
 #else
-#import "PGPlugin.h"
+#import "CDVPlugin.h"
+#import "CDVCordovaView.h"
 #endif
 
-@interface UIWebView(ExceptionDebug)
+@interface CDVCordovaView(ExceptionDebug)
 @end
 
-
-@interface wizDevToolsPlugin : PGPlugin
-    + (wizDevToolsPlugin*) sharedInstance;
-    - (PGPlugin*)initWithWebView:(UIWebView*)webView;
-    - (void)ready:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
+@interface wizDevToolsPlugin : CDVPlugin
++ (ExceptionDebugPlugin*) sharedInstance;
+- (CDVPlugin*)initWithWebView:(UIWebView*)webView;
+- (void)ready:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
 @end
