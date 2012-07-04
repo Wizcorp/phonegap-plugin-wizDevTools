@@ -1,10 +1,9 @@
 
 
-
 # PLUGIN: 
 
 phonegap-plugin-wizDevTools
-PhoneGap 1.1
+Cordova 1.7
 
 
 
