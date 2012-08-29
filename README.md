@@ -1,4 +1,3 @@
-
 # PLUGIN: 
 
 phonegap-plugin-wizDevTools
@@ -46,6 +45,3 @@ Value : ExceptionDebugPlugin<br />
 3 ) Add \<script\> tag to your index.html<br />
 \<script type="text/javascript" charset="utf-8" src="phonegap/plugin/exceptionDebugPlugin/exceptionDebugPlugin.js"\>\</script\><br />
 (assuming your index.html is setup like tree above)
-
-
-4 ) Follow example code below.
