@@ -77,11 +77,16 @@ failedToParseSource:(NSString *)source
                     nil];
 
     id documentURL = [[webFrame performSelector:@selector(DOMDocument)] URL];
-    __block NSString* json = [[[NSDictionary dictionaryWithObjectsAndKeys:
-                                [webView performSelector:@selector(mainFrameTitle)], @"mainFrameTitle",
-                                documentURL,              @"documentURL",
-                                exception,                @"exception",
-                                nil] JSONString] retain];
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                          [webView performSelector:@selector(mainFrameTitle)], @"mainFrameTitle",
+                          documentURL,              @"documentURL",
+                          exception,                @"exception",
+                          nil];
+    NSError *err;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:&err];
+    __block NSString* json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         [[wizDevToolsPlugin sharedInstance] fireExceptionDebugEventWithJSONString:json];
@@ -213,12 +218,17 @@ exceptionWasRaised:(WebScriptCallFrame *)frame
         tmp = [tmp performSelector:@selector(caller)];
     }
 
-    __block NSString* json = [[[NSDictionary dictionaryWithObjectsAndKeys:
-                       callStack,                @"callStack",
-                       [webView performSelector:@selector(mainFrameTitle)], @"mainFrameTitle",
-                       documentURL,              @"documentURL",
-                       exception,                @"exception",
-                       nil] JSONString] retain];
+    NSDictionary *dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                          callStack,                @"callStack",
+                          [webView performSelector:@selector(mainFrameTitle)], @"mainFrameTitle",
+                          documentURL,              @"documentURL",
+                          exception,                @"exception",
+                          nil];
+    NSError *err;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:&err];
+    __block NSString* json = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
 
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         [[wizDevToolsPlugin sharedInstance] fireExceptionDebugEventWithJSONString:json];
