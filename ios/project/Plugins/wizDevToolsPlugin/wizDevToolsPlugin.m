@@ -238,7 +238,6 @@ exceptionWasRaised:(WebScriptCallFrame *)frame
 static wizDevToolsPlugin* instance = nil;
 
 
-#import "WizUtils.h"
 #import "WizDebugLog.h"
 #include <unistd.h>
 

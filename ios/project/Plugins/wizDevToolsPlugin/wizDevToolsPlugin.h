@@ -20,7 +20,7 @@
 @end
 
 @interface wizDevToolsPlugin : CDVPlugin
-+ (ExceptionDebugPlugin*) sharedInstance;
-- (CDVPlugin*)initWithWebView:(UIWebView*)webView;
-- (void)ready:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options;
++ (wizDevToolsPlugin *) sharedInstance;
+- (CDVPlugin *)initWithWebView:(UIWebView *)webView;
+- (void)ready:(NSMutableArray *)arguments withDict:(NSMutableDictionary *)options;
 @end
