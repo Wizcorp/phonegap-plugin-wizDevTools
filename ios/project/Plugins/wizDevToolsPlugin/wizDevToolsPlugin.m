@@ -76,9 +76,9 @@ failedToParseSource:(NSString *)source
                     @"ParseError", @"type",
                     nil];
 
-    id documentURL = [[webFrame DOMDocument] URL];
+    id documentURL = [[webFrame performSelector:@selector(DOMDocument)] URL];
     __block NSString* json = [[[NSDictionary dictionaryWithObjectsAndKeys:
-                                [webView mainFrameTitle], @"mainFrameTitle",
+                                [webView performSelector:@selector(mainFrameTitle)], @"mainFrameTitle",
                                 documentURL,              @"documentURL",
                                 exception,                @"exception",
                                 nil] JSONString] retain];
@@ -160,12 +160,12 @@ exceptionWasRaised:(WebScriptCallFrame *)frame
     }
 
     // Ignore errors triggered by Cordova in blank pages
-    id documentURL = [[webFrame DOMDocument] URL];
+    id documentURL = [[webFrame performSelector:@selector(DOMDocument)] URL];
     if ([documentURL isEqualToString:@"about:blank"]) {
         return;
     }
 
-    id exception = [frame exception];
+    id exception = [frame  performSelector:@selector(exception)];
     NSString* type = nil;
     NSString* message = nil;
 
@@ -193,7 +193,7 @@ exceptionWasRaised:(WebScriptCallFrame *)frame
     WebScriptCallFrame* tmp = frame;
     NSMutableArray* callStack = [[[NSMutableArray alloc] init] autorelease];
     while (tmp) {
-        NSString* functionName = [tmp functionName];
+        NSString* functionName = [tmp performSelector:@selector(functionName)];
         if (!functionName) functionName = @"<anonymous>";
         CallFrameInfo* callFrameInfo = [callFrames objectForKey:[NSValue valueWithNonretainedObject:tmp]];
         Source* callFrameSource = [SOURCES objectForKey:[NSNumber numberWithInt:callFrameInfo.sid]];
@@ -210,12 +210,12 @@ exceptionWasRaised:(WebScriptCallFrame *)frame
                               callFrameLineNumber, @"lineNumber",
                               callFrameLine,       @"line",
                               nil]];
-        tmp = [tmp caller];
+        tmp = [tmp performSelector:@selector(caller)];
     }
 
     __block NSString* json = [[[NSDictionary dictionaryWithObjectsAndKeys:
                        callStack,                @"callStack",
-                       [webView mainFrameTitle], @"mainFrameTitle",
+                       [webView performSelector:@selector(mainFrameTitle)], @"mainFrameTitle",
                        documentURL,              @"documentURL",
                        exception,                @"exception",
                        nil] JSONString] retain];
@@ -229,7 +229,7 @@ exceptionWasRaised:(WebScriptCallFrame *)frame
 - (void)webView:(id)sender didClearWindowObject:(id)windowObject forFrame:(WebFrame*)frame
 {
     if ([sender respondsToSelector:@selector(setScriptDebugDelegate:)]) {
-        [sender setScriptDebugDelegate:self];
+        [sender performSelector:@selector(setScriptDebugDelegate:) withObject:self];
     }
 }
 @end
