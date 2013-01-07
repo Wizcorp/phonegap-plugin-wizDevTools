@@ -50,3 +50,6 @@ Value : wizDevToolsPlugin<br />
 3 ) Add \<script\> tag to your index.html<br />
 \<script type="text/javascript" charset="utf-8" src="phonegap/plugin/wizDevToolsPlugin/wizDevToolsPlugin.js"\>\</script\><br />
 (assuming your index.html is setup like tree above)
+
+4 ) Disable the use of private APIs for release (App Store) submission builds by adding NDEBUG=1 as a preprocessor macro in the Xcode build settings.
+
