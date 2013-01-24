@@ -280,9 +280,9 @@ static wizDevToolsPlugin* instance = nil;
 
 
 
-- (void)ready:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options {
+- (void)ready:(CDVInvokedUrlCommand*)command {
     // Function called by Javascript to have PhoneGap load the plugin
-    [self writeJavascript: [[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] toSuccessCallbackString:[arguments pop]]];
+    [self writeJavascript: [[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] toSuccessCallbackString:command.callbackId]];
 }
 
 - (void) fireExceptionDebugEventWithJSONString:(NSString*)jsonString {
