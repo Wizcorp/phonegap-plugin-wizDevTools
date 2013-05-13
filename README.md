@@ -1,7 +1,7 @@
 # PLUGIN: 
 
 phonegap-plugin-wizDevTools
-Cordova 2.4
+Cordova 2.5
 last update : 13/05/2013
 
 
@@ -11,6 +11,7 @@ PhoneGap plugin for accessing the Wizard Development Toolkit. (iOS ONLY)
 
 
 # CHANGELOG: 
+- Updated to Cordova 2.5
 - Updated to Cordova 2.4
 - Updated to Cordova 2.3
 - Updated to Cordova 1.9
