@@ -55,7 +55,7 @@ NSMutableDictionary* SOURCES = nil;
 
 char callFramesKey;
 
-@implementation CDVCordovaView(ExceptionDebug)
+@implementation UIWebView(ExceptionDebug)
 - (void)    webView:(WebView *)webView
 failedToParseSource:(NSString *)source
      baseLineNumber:(NSUInteger)lineNumber
