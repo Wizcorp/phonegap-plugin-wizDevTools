@@ -14,7 +14,7 @@
 @end
 
 #ifndef NDEBUG // Never build this plugin in RELEASE (will otherwise get rejected by Apple) !
-#import <Cordova/JSONKit.h>
+#import <Cordova/CDVJSON.h>
 #import <objc/runtime.h>
 
 
@@ -55,7 +55,7 @@ NSMutableDictionary* SOURCES = nil;
 
 char callFramesKey;
 
-@implementation CDVCordovaView(ExceptionDebug)
+@implementation UIWebView(ExceptionDebug)
 - (void)    webView:(WebView *)webView
 failedToParseSource:(NSString *)source
      baseLineNumber:(NSUInteger)lineNumber

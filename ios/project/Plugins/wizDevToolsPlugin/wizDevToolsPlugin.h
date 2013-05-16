@@ -9,10 +9,6 @@
 #import <Foundation/Foundation.h>
 
 #import <Cordova/CDVPlugin.h>
-#import <Cordova/CDVCordovaView.h>
-
-@interface CDVCordovaView(ExceptionDebug)
-@end
 
 @interface wizDevToolsPlugin : CDVPlugin
 + (wizDevToolsPlugin *) sharedInstance;
