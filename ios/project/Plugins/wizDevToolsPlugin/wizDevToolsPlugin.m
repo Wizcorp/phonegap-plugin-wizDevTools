@@ -14,7 +14,7 @@
 @end
 
 #ifndef NDEBUG // Never build this plugin in RELEASE (will otherwise get rejected by Apple) !
-#import <Cordova/JSONKit.h>
+#import <Cordova/CDVJSON.h>
 #import <objc/runtime.h>
 
 
